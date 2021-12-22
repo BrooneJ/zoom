@@ -20,5 +20,14 @@ const server = http.createServer(app);
 // 다음 설정을 통해 http서버, websocket서버 둘 다 돌릴 수 있게 된다.
 const wss = new WebSocket.Server({ server });
 
+wss.on("connection", (socket) => {
+  console.log("Connected to Browser ✅");
+  socket.on("close", () => console.log("Disconnected from the Browser ❌"));
+  socket.on("message", (message) => {
+    console.log(message.toString());
+  });
+  socket.send("hello");
+});
+
 // app.listen과 달라 보이지 않지만 http와 ws를 둘 다 사용할 수 있다는 점에서 크게 다르다.
 server.listen(3000, handleListen);
