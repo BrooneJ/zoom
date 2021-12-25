@@ -19,11 +19,13 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
-  socket.on("enter_room", (msg, done) => {
-    console.log(msg);
-    setTimeout(() => {
-      done();
-    }, 10000);
+  // 모든 이벤트가 실행될 때 같이 실행
+  socket.onAny((event) => {
+    console.log(`Socket Event:${event}`);
+  });
+  socket.on("enter_room", (roomName, done) => {
+    socket.join(roomName);
+    done();
   });
 });
 
