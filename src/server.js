@@ -19,6 +19,7 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
+  socket["nickname"] = "Anon";
   // 모든 이벤트가 실행될 때 같이 실행
   socket.onAny((event) => {
     console.log(`Socket Event:${event}`);
@@ -27,15 +28,18 @@ wsServer.on("connection", (socket) => {
     socket.join(roomName);
     done();
     // 참가한 방에 있는 모든 사람에게 welcome이벤드를 emit함
-    socket.to(roomName).emit("welcome");
+    socket.to(roomName).emit("welcome", socket.nickname);
   });
   socket.on("disconnecting", () => {
-    socket.rooms.forEach((room) => socket.to(room).emit("bye"));
+    socket.rooms.forEach((room) =>
+      socket.to(room).emit("bye", socket.nickname)
+    );
   });
   socket.on("new_message", (msg, room, done) => {
-    socket.to(room).emit("new_message", msg);
+    socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);
     done();
   });
+  socket.on("nickname", (nickname) => (socket["nickname"] = nickname));
 });
 
 // 다음 설정을 통해 http서버, websocket서버 둘 다 돌릴 수 있게 된다.
