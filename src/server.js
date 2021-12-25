@@ -29,6 +29,13 @@ wsServer.on("connection", (socket) => {
     // 참가한 방에 있는 모든 사람에게 welcome이벤드를 emit함
     socket.to(roomName).emit("welcome");
   });
+  socket.on("disconnecting", () => {
+    socket.rooms.forEach((room) => socket.to(room).emit("bye"));
+  });
+  socket.on("new_message", (msg, room, done) => {
+    socket.to(room).emit("new_message", msg);
+    done();
+  });
 });
 
 // 다음 설정을 통해 http서버, websocket서버 둘 다 돌릴 수 있게 된다.
