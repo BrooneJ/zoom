@@ -18,7 +18,24 @@ const handleListen = () => console.log(`Listening on http://loaclhost:3000`);
 const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
+function publicRooms() {
+  const {
+    sockets: {
+      adapter: { sids, rooms },
+    },
+  } = wsServer;
+  const publicRooms = [];
+  rooms.forEach((_, key) => {
+    if (sids.get(key) === undefined) {
+      publicRooms.push(key);
+    }
+  });
+  return publicRooms;
+}
+
 wsServer.on("connection", (socket) => {
+  // 접속시 현재 있는 방 확인
+  wsServer.sockets.emit("room_change", publicRooms());
   socket["nickname"] = "Anon";
   // 모든 이벤트가 실행될 때 같이 실행
   socket.onAny((event) => {
@@ -29,11 +46,15 @@ wsServer.on("connection", (socket) => {
     done();
     // 참가한 방에 있는 모든 사람에게 welcome이벤드를 emit함
     socket.to(roomName).emit("welcome", socket.nickname);
+    wsServer.sockets.emit("room_change", publicRooms());
   });
   socket.on("disconnecting", () => {
     socket.rooms.forEach((room) =>
       socket.to(room).emit("bye", socket.nickname)
     );
+  });
+  socket.on("disconnect", () => {
+    wsServer.sockets.emit("room_change", publicRooms());
   });
   socket.on("new_message", (msg, room, done) => {
     socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);
